@@ -3,7 +3,6 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { OctagonAlertIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
@@ -20,6 +19,8 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { FaGithub, FaGoogle } from "react-icons/fa";
 const formSchema = z
   .object({
     name: z.string().min(1, "Name is required"),
@@ -37,19 +38,41 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 export const SignUpView = () => {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const router = useRouter();
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
     setPending(true);
 
     authClient.signUp.email(
-      { name: data.name, email: data.email, password: data.password },
+      {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        callbackURL: "/",
+      },
       {
         onSuccess: () => {
           setPending(false);
           router.push("/");
+        },
+        onError: (error) => {
+          setPending(false);
+          setError(error.error?.message || "An unknown error occurred.");
+        },
+      }
+    );
+  };
+  const onSocial = (provider: "github" | "google") => {
+    setError(null);
+    setPending(true);
+
+    authClient.signIn.social(
+      { provider: provider, callbackURL: "/" },
+      {
+        onSuccess: () => {
+          setPending(false);
         },
         onError: (error) => {
           setPending(false);
@@ -77,7 +100,7 @@ export const SignUpView = () => {
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">Let&apos;s get started</h1>
                   <p className="text-muted-foreground text-balance">
-                   Create your account
+                    Create your account
                   </p>
                 </div>
                 <div className="grid gap-3">
@@ -137,7 +160,7 @@ export const SignUpView = () => {
                     )}
                   />
                 </div>
-                 <div className="grid gap-3">
+                <div className="grid gap-3">
                   <FormField
                     control={form.control}
                     name="confirmPassword"
@@ -173,19 +196,21 @@ export const SignUpView = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Button
                     disabled={pending}
+                    onClick={() => onSocial("google")}
                     variant="outline"
                     type="button"
                     className="w-full"
                   >
-                    Google
+                    <FaGoogle />
                   </Button>
                   <Button
                     disabled={pending}
+                    onClick={() => onSocial("github")}
                     variant="outline"
                     type="button"
                     className="w-full"
                   >
-                    GitHub
+                    <FaGithub />
                   </Button>
                 </div>
                 <div className="text-center text-sm">

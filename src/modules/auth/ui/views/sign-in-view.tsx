@@ -3,7 +3,6 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { OctagonAlertIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
@@ -20,6 +19,8 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import{FaGithub, FaGoogle} from "react-icons/fa";
 const formSchema = z.object({
   email: z
     .string()
@@ -30,9 +31,9 @@ const formSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 export const SignInView = () => {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const router = useRouter();
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
     setPending(true);
@@ -41,11 +42,12 @@ export const SignInView = () => {
       {
         email: data.email,
         password: data.password,
+        callbackURL: "/",
       },
       {
         onSuccess: () => {
-           setPending(false);
           router.push("/");
+           setPending(false);
         },
         onError: (error) => {
            setPending(false);
@@ -62,6 +64,25 @@ export const SignInView = () => {
       password: "",
     },
   });
+  const onSocial = (provider: "github" | "google") => {
+      setError(null);
+      setPending(true);
+  
+      authClient.signIn.social(
+        {provider: provider,
+          callbackURL: "/"
+         },
+        {
+          onSuccess: () => {
+            setPending(false);
+          },
+          onError: (error) => {
+            setPending(false);
+            setError(error.error?.message || "An unknown error occurred.");
+          },
+        }
+      );
+    };
   return (
     <div className="flex flex-col gap-6">
       <Card className="overflow-hidden p-0">
@@ -128,11 +149,11 @@ export const SignInView = () => {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Button disabled={pending} variant="outline" type="button" className="w-full">
-                    Google
+                  <Button disabled={pending}  onClick={() => onSocial("google")} variant="outline" type="button" className="w-full">
+                   <FaGoogle/> 
                   </Button>
-                  <Button disabled={pending} variant="outline" type="button" className="w-full">
-                    GitHub
+                  <Button disabled={pending}  onClick={() => onSocial("github")} variant="outline" type="button" className="w-full">
+                   <FaGithub/> 
                   </Button>
                 </div>
                 <div className="text-center text-sm">
